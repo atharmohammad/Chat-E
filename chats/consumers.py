@@ -12,21 +12,21 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept() #accept to connect
-
-        await self.channel_layer.group_send(    #To send message in group
-            self.room_group_name,
-            {
-                'type':'tester_message',    #This type is will be the name of function calls
-                'tester':'Hello Group'
-            }
-        )
-
-    async def tester_message(self,event):
-        tester = event['tester']
-
-        await self.send(text_data=json.dumps({
-            'tester': tester
-        }))
+    #
+    #     await self.channel_layer.group_send(    #To send message in group
+    #         self.room_group_name,
+    #         {
+    #             'type':'tester_message',    #This type is will be the name of function calls
+    #             'tester':'Hello Group'
+    #         }
+    #     )
+    #
+    # async def tester_message(self,event):
+    #     tester = event['tester']
+    #
+    #     await self.send(text_data=json.dumps({
+    #         'tester': tester
+    #     }))
 
     async  def disconnect(self,close_code):
         #Leave room group
@@ -34,3 +34,21 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+    async def receive(self,text_data=None,bytes_data=None):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        username = text_data_json['username']
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type':'chat_message',    #This type is will be the name of function calls
+                'message': message,
+                'username':username
+            }
+        )
+    async def chat_message(self,event):
+        message  = event['message']
+        await self.send(text_data=json.dumps({
+            'message' : message,
+        }))
