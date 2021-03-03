@@ -39,13 +39,15 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         message = text_data_json['message']
         username = text_data_json['username']
         way = text_data_json['way']
+        join = text_data_json['join']
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type':'chat_message',    #This type is will be the name of function calls
                 'message': message,
                 'username':username,
-                'way':way
+                'way':way,
+                'join':join
             }
         )
     async def chat_message(self,event):
@@ -53,9 +55,11 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         username = event['username']
         type = event['type']
         way = event['way']
+        join = event['join']
         await self.send(text_data=json.dumps({
             'message' : message,
             'type' : type,
             'username' : username,
-            'way':way
+            'way':way,
+            'join':join
         }))

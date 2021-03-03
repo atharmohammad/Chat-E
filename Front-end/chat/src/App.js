@@ -1,9 +1,12 @@
 import './App.css';
 import Chat from './Chat'
+import Header from './Header'
 function App() {
   return (
     <div className="App">
-        <Chat/>
+        <Header>
+          <Chat/>
+        </Header>
     </div>
   );
 }

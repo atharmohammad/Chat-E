@@ -47,6 +47,9 @@ const useStyles = theme => ({
   },
   root: {
     boxShadow: 'none',
+  },
+  message:{
+    margin: theme.spacing(3, 0, 2),
   }
 });
 
@@ -58,7 +61,7 @@ class App extends Component {
     value: '',
     name: '',
     room: 'Django',
-
+    join : null
   }
 
   client = new WebSocket('ws://127.0.0.1:8000/ws/chat/' + this.state.room + '/')
@@ -75,7 +78,8 @@ class App extends Component {
         this.setState({
           messages:[...this.state.messages,{
             msg:dataFromServer.message,
-            name:dataFromServer.username
+            name:dataFromServer.username,
+            join:dataFromServer.join
           }]
         })
       }
@@ -92,7 +96,8 @@ class App extends Component {
       this.client.send(JSON.stringify({
         way:'message',
         message:this.state.value,
-        username:this.state.name
+        username:this.state.name,
+        join:null
       }));
 
       this.setState({
@@ -102,28 +107,69 @@ class App extends Component {
 
   }
 
+  LoggedIn=(e)=>{
+
+    this.client.send(JSON.stringify({
+      join:'Joined',
+      way:'message',
+      message:this.state.value,
+      username:this.state.name,
+    }));
+
+    this.setState({isLoggedIn:true});
+  }
+
+  leaveHandler = (e)=>{
+    this.client.send(JSON.stringify({
+      join:'Left',
+      way:'message',
+      message:this.state.value,
+      username:this.state.name,
+    }));
+
+    this.setState({
+      isLoggedIn: false,
+      messages: [],
+      value: '',
+      name: '',
+      join : null
+    });
+  }
+
+  sendHandler =(event)=>{
+      // Number 13 is the "Enter" key on the keyboard
+      if (event.key === 'Enter') {
+        document.getElementById("myBtn").click();
+      }
+  }
+
   render() {
+
     const { classes } = this.props;
+
+    const msg = this.state.messages.map(message => <>
+      {message.join === null ? <Card className={classes.root}>
+        <CardHeader
+          avatar={
+            <Avatar className={classes.avatar}>
+              {message.name[0]}
+            </Avatar>
+          }
+          title={message.name}
+          subheader={message.msg}
+        />
+      </Card> : null }
+      {message.join !== null ? <p>{message.name} has {message.join}</p> : null}
+    </>)
+
     return (
       <Container component="main" maxWidth="xs">
         <div>
           {this.state.isLoggedIn ?
             <div style={{ marginTop: 50, }}>
               <Typography component="h1" variant="h5">Room Name: {this.state.room}</Typography>
-              <Paper style={{ height: 500, maxHeight: 500, overflow: 'auto', boxShadow: 'none', }}>
-                {this.state.messages.map(message => <>
-                  <Card className={classes.root}>
-                    <CardHeader
-                      avatar={
-                        <Avatar className={classes.avatar}>
-                          {message.name[0]}
-                  </Avatar>
-                      }
-                      title={message.name}
-                      subheader={message.msg}
-                    />
-                  </Card>
-                </>)}
+              <Paper style={{ height: 500, maxHeight: 500, overflow: 'auto', boxShadow: '1px 1px #888888', }}>
+                {msg}
               </Paper>
 
                 <TextField
@@ -131,14 +177,17 @@ class App extends Component {
                   label="Make a comment"
                   defaultValue="Default Value"
                   variant="outlined"
+                  className={classes.message}
                   value={this.state.value}
                   fullWidth
                   onChange={e => {
                     this.setState({ value: e.target.value });
                     this.value = this.state.value;
                   }}
+                  onKeyPress = {(e)=>this.sendHandler(e)}
                 />
                 <Button
+                  id='myBtn'
                   type="submit"
                   fullWidth
                   variant="contained"
@@ -147,6 +196,16 @@ class App extends Component {
                   onClick={this.onButtonClicked}
                 >
                   Send
+                </Button>
+                <Button
+                  id='myBtn'
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  color="secondary"
+                  onClick={this.leaveHandler}
+                >
+                  Leave
                 </Button>
             </div>
             :
@@ -192,7 +251,7 @@ class App extends Component {
                     variant="contained"
                     color="primary"
                     className={classes.submit}
-                    onClick={()=>{this.setState({isLoggedIn:true})}}
+                    onClick={this.LoggedIn}
                   >
                     Start Chatting
                   </Button>
