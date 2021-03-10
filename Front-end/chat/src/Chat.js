@@ -13,6 +13,9 @@ import Paper from '@material-ui/core/Paper';
 import Avatar from '@material-ui/core/Avatar';
 import { withStyles } from "@material-ui/core/styles";
 import { w3cwebsocket  as WebSocket } from "websocket";
+import {connect} from 'react-redux';
+import * as actionCreator from './store/index'
+import {Redirect} from 'react-router-dom'
 
 function Copyright() {
   return (
@@ -56,59 +59,22 @@ const useStyles = theme => ({
 class App extends Component {
 
   state = {
-    isLoggedIn: false,
-    messages: [],
     value: '',
     name: '',
-    room: 'Django',
-    join : null
   }
 
-  client = new WebSocket('ws://127.0.0.1:8000/ws/chat/' + this.state.room + '/')
+
+  client = new WebSocket('ws://127.0.0.1:8000/ws/chat/' + this.props.room + '/')
 
   componentDidMount() {
     this.client.onopen = () => {
       console.log('WebSocket Client Connected');
-    };
-
-    this.client.onmessage = (message)=>{
-      const dataFromServer = JSON.parse(message.data);
-      console.log("reply recieved",dataFromServer.way);
-      if(dataFromServer){
-        this.setState({
-          messages:[...this.state.messages,{
-            msg:dataFromServer.message,
-            name:dataFromServer.username,
-            join:dataFromServer.join
-          }]
-        })
-      }
     }
-    this.client.onclose = () => {
-      console.log('WebSocket Client Disconnected');
-    };
 
-  }
+  };
 
-
-  onButtonClicked = (e)=>{
-
-      this.client.send(JSON.stringify({
-        way:'message',
-        message:this.state.value,
-        username:this.state.name,
-        join:null
-      }));
-
-      this.setState({
-        value:''
-      })
-
-
-  }
-
-  LoggedIn=(e)=>{
-
+  loginHandler = ()=>{
+    console.log(this.state.name)
     this.client.send(JSON.stringify({
       join:'Joined',
       way:'message',
@@ -116,166 +82,104 @@ class App extends Component {
       username:this.state.name,
     }));
 
-    this.setState({isLoggedIn:true});
+    this.props.LoggedIn(this.state.name);
+
   }
 
-  leaveHandler = (e)=>{
-    this.client.send(JSON.stringify({
-      join:'Left',
-      way:'message',
-      message:this.state.value,
-      username:this.state.name,
-    }));
-
-    this.setState({
-      isLoggedIn: false,
-      messages: [],
-      value: '',
-      name: '',
-      join : null
-    });
-  }
-
-  sendHandler =(event)=>{
-      // Number 13 is the "Enter" key on the keyboard
-      if (event.key === 'Enter') {
-        document.getElementById("myBtn").click();
-      }
-  }
 
   render() {
 
     const { classes } = this.props;
-
-    const msg = this.state.messages.map(message => <>
-      {message.join === null ? <Card className={classes.root}>
-        <CardHeader
-          avatar={
-            <Avatar className={classes.avatar}>
-              {message.name[0]}
-            </Avatar>
-          }
-          title={message.name}
-          subheader={message.msg}
-        />
-      </Card> : null }
-      {message.join !== null ? <p>{message.name} has {message.join}</p> : null}
-    </>)
-
-    return (
+    let chat = (
       <Container component="main" maxWidth="xs">
-        <div>
-          {this.state.isLoggedIn ?
-            <div style={{ marginTop: 50, }}>
-              <Typography component="h1" variant="h5">Room Name: {this.state.room}</Typography>
-              <Paper style={{ height: 500, maxHeight: 500, overflow: 'auto', boxShadow: '1px 1px #888888', }}>
-                {msg}
-              </Paper>
-
+          <div>
+            <CssBaseline />
+            <div className={classes.paper}>
+              <Typography component="h1" variant="h5">
+                ChattyRooms
+              </Typography>
                 <TextField
-                  id="outlined-helperText"
-                  label="Make a comment"
-                  defaultValue="Default Value"
                   variant="outlined"
-                  className={classes.message}
-                  value={this.state.value}
+                  margin="normal"
+                  required
                   fullWidth
+                  id="email"
+                  label="Chatroom Name"
+                  name="Chatroom Name"
+                  autoFocus
+                  value={this.props.room}
+                  // onChange={e => {
+                  //   this.setState({ room: e.target.value });
+                  //   this.value = this.state.room;
+                  // }}
+                />
+                <TextField
+                  variant="outlined"
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="Username"
+                  label="Username"
+                  type="Username"
+                  id="Username"
+                  value={this.state.name}
                   onChange={e => {
-                    this.setState({ value: e.target.value });
-                    this.value = this.state.value;
+                    this.setState({ name: e.target.value });
+                    this.value = this.state.name;
                   }}
-                  onKeyPress = {(e)=>this.sendHandler(e)}
                 />
                 <Button
-                  id='myBtn'
                   type="submit"
                   fullWidth
                   variant="contained"
                   color="primary"
                   className={classes.submit}
-                  onClick={this.onButtonClicked}
+                  onClick={this.loginHandler}
                 >
-                  Send
+                  Start Chatting
                 </Button>
-                <Button
-                  id='myBtn'
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="secondary"
-                  onClick={this.leaveHandler}
-                >
-                  Leave
-                </Button>
-            </div>
-            :
-            <div>
-              <CssBaseline />
-              <div className={classes.paper}>
-                <Typography component="h1" variant="h5">
-                  ChattyRooms
-                </Typography>
-                  <TextField
-                    variant="outlined"
-                    margin="normal"
-                    required
-                    fullWidth
-                    id="email"
-                    label="Chatroom Name"
-                    name="Chatroom Name"
-                    autoFocus
-                    value={this.state.room}
-                    onChange={e => {
-                      this.setState({ room: e.target.value });
-                      this.value = this.state.room;
-                    }}
-                  />
-                  <TextField
-                    variant="outlined"
-                    margin="normal"
-                    required
-                    fullWidth
-                    name="Username"
-                    label="Username"
-                    type="Username"
-                    id="Username"
-                    value={this.state.name}
-                    onChange={e => {
-                      this.setState({ name: e.target.value });
-                      this.value = this.state.name;
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    color="primary"
-                    className={classes.submit}
-                    onClick={this.LoggedIn}
-                  >
-                    Start Chatting
-                  </Button>
-                  <Grid container>
-                    <Grid item xs>
-                      <Link href="#" variant="body2">
-                        Forgot password?
-                      </Link>
-                    </Grid>
-                    <Grid item>
-                      <Link href="#" variant="body2">
-                        {"Don't have an account? Sign Up"}
-                      </Link>
-                    </Grid>
+                <Grid container>
+                  <Grid item xs>
+                    <Link href="#" variant="body2">
+                      Forgot password?
+                    </Link>
                   </Grid>
-              </div>
-              <Box mt={8}>
-                <Copyright />
-              </Box>
+                  <Grid item>
+                    <Link href="#" variant="body2">
+                      {"Don't have an account? Sign Up"}
+                    </Link>
+                  </Grid>
+                </Grid>
             </div>
-          }
-        </div>
+            <Box mt={8}>
+              <Copyright />
+            </Box>
+          </div>
       </Container>
+    );
+
+    if(this.props.isLoggedIn)
+      chat = <Redirect to='/Django'/>
+
+    return (
+      <div>
+        {chat}
+      </div>
     );
   }
 }
-export default withStyles(useStyles)(App)
+
+const mapStateToProps = (state)=>{
+  return {
+    isLoggedIn : state.isLoggedIn,
+    room: state.room,
+    join : state.join
+  }
+}
+
+const mapDispatchToProps = (dispatch)=>{
+  return {
+    LoggedIn : (name) => dispatch(actionCreator.LoggedIn(name)),
+  }
+}
+export default connect(mapStateToProps,mapDispatchToProps)(withStyles(useStyles)(App))
