@@ -13,7 +13,8 @@ const reducer = (state=initialState,action)=>{
       return {
         ...state,
         isLoggedIn:true,
-        name:action.name
+        name:action.name,
+        room:action.room
       }
     }
     case(actionType.LeaveGroup):{

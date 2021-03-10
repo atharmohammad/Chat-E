@@ -137,7 +137,7 @@ class App extends Component {
                   this.setState({ value: e.target.value });
                   this.value = this.state.value;
                 }}
-                onKeyPress = {this.sendHandler}
+                onKeyPress = {(e)=>this.sendHandler(e)}
               />
               <Button
                 id='myBtn'

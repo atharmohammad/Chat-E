@@ -61,10 +61,11 @@ class App extends Component {
   state = {
     value: '',
     name: '',
+    room:''
   }
 
 
-  client = new WebSocket('ws://127.0.0.1:8000/ws/chat/' + this.props.room + '/')
+  client = new WebSocket('ws://127.0.0.1:8000/ws/chat/' + this.state.room + '/')
 
   componentDidMount() {
     this.client.onopen = () => {
@@ -82,8 +83,8 @@ class App extends Component {
       username:this.state.name,
     }));
 
-    this.props.LoggedIn(this.state.name);
-
+    this.props.LoggedIn(this.state.name,this.state.room);
+    console.log(this.state.room)
   }
 
 
@@ -108,10 +109,10 @@ class App extends Component {
                   name="Chatroom Name"
                   autoFocus
                   value={this.props.room}
-                  // onChange={e => {
-                  //   this.setState({ room: e.target.value });
-                  //   this.value = this.state.room;
-                  // }}
+                  onChange={e => {
+                    this.setState({ room: e.target.value });
+                    this.value = this.state.room;
+                  }}
                 />
                 <TextField
                   variant="outlined"
@@ -158,8 +159,11 @@ class App extends Component {
       </Container>
     );
 
-    if(this.props.isLoggedIn)
-      chat = <Redirect to='/Django'/>
+    if(this.props.isLoggedIn){
+      const url = '/' + this.state.room
+      chat = <Redirect to={url}/>
+    }
+
 
     return (
       <div>
@@ -172,14 +176,13 @@ class App extends Component {
 const mapStateToProps = (state)=>{
   return {
     isLoggedIn : state.isLoggedIn,
-    room: state.room,
     join : state.join
   }
 }
 
 const mapDispatchToProps = (dispatch)=>{
   return {
-    LoggedIn : (name) => dispatch(actionCreator.LoggedIn(name)),
+    LoggedIn : (name,room) => dispatch(actionCreator.LoggedIn(name,room)),
   }
 }
 export default connect(mapStateToProps,mapDispatchToProps)(withStyles(useStyles)(App))

@@ -1,9 +1,9 @@
 import * as actionType from './actionType'
 
-export const LoggedIn=(name)=>{
+export const LoggedIn=(name,room)=>{
 
   return dispatch=>{
-    dispatch({type:actionType.LoggedIn,name:name});
+    dispatch({type:actionType.LoggedIn,name:name,room:room});
   }
 }
 
